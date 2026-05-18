@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Trade Lifecycle Intelligence Assistant</title>
+  <style>
+
+    /* ─── RESET & BASE ─────────────────────────────── */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+    }
+
+    /* ─── HEADER ───────────────────────────────────── */
+    .header {
+      width: 100%;
+      max-width: 700px;
+      margin-bottom: 20px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: #1a2235;
+      border: 1px solid #2a3a55;
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 11px;
+      color: #7aa2c8;
+      margin-bottom: 12px;
+    }
+
+    .pulse {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #1D9E75;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+
+    .header h1 {
+      font-size: 22px;
+      font-weight: 600;
+      color: #f0f4f8;
+      margin-bottom: 6px;
+    }
+
+    .header p {
+      font-size: 13px;
+      color: #7a8fa8;
+      line-height: 1.6;
+    }
+
+    .built-by {
+      font-size: 11px;
+      color: #3d5a7a;
+      margin-top: 6px;
+    }
+
+    .built-by span { color: #1D9E75; }
+
+    /* ─── QUICK-START CHIPS ────────────────────────── */
+    .chips {
+      width: 100%;
+      max-width: 700px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .chip {
+      font-size: 12px;
+      padding: 6px 14px;
+      background: #1a2235;
+      border: 1px solid #2a3a55;
+      border-radius: 20px;
+      cursor: pointer;
+      color: #7aa2c8;
+      transition: all 0.15s;
+    }
+
+    .chip:hover {
+      background: #1f3050;
+      color: #c8dff5;
+      border-color: #3a5a85;
+    }
+
+    /* ─── CHAT WINDOW ──────────────────────────────── */
+    .chat-area {
+      width: 100%;
+      max-width: 700px;
+      background: #141824;
+      border: 1px solid #1e2d45;
+      border-radius: 16px;
+      min-height: 340px;
+      max-height: 440px;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-bottom: 14px;
+      scroll-behavior: smooth;
+    }
+
+    /* ─── MESSAGES ─────────────────────────────────── */
+    .msg { display: flex; gap: 10px; }
+    .msg.user { flex-direction: row-reverse; }
+
+    .avatar {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .avatar.ai   { background: #0d2e22; color: #1D9E75; }
+    .avatar.user { background: #0d1e35; color: #5b9bd5; }
+
+    .bubble {
+      max-width: 87%;
+      font-size: 13.5px;
+      line-height: 1.7;
+      padding: 11px 15px;
+      border-radius: 14px;
+    }
+
+    .msg.ai   .bubble { background: #1a2235; border-radius: 4px 14px 14px 14px; }
+    .msg.user .bubble { background: #0d1e35; color: #a8cbf0; border-radius: 14px 4px 14px 14px; }
+
+    /* category tags inside AI bubbles */
+    .tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 9px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      letter-spacing: 0.4px;
+    }
+    .tag.flow { background: #0d2e22; color: #1D9E75; }
+    .tag.reg  { background: #2e1a0d; color: #d97c3a; }
+    .tag.risk { background: #2a1a0d; color: #d4a030; }
+    .tag.pm   { background: #1a0d2e; color: #9b7fe0; }
+
+    .bubble ul { padding-left: 18px; margin-top: 4px; }
+    .bubble li { margin-bottom: 4px; }
+    .bubble strong { color: #c8dff5; font-weight: 600; }
+    .bubble p + p  { margin-top: 8px; }
+
+    /* ─── TYPING INDICATOR ─────────────────────────── */
+    .typing { display: flex; align-items: center; gap: 5px; padding: 4px 0; }
+    .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #3a5a85;
+      animation: bounce 1.2s infinite;
+    }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30%           { transform: translateY(-6px); }
+    }
+
+    /* ─── INPUT ROW ────────────────────────────────── */
+    .input-row {
+      width: 100%;
+      max-width: 700px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    textarea {
+      flex: 1;
+      resize: none;
+      min-height: 46px;
+      max-height: 130px;
+      overflow-y: auto;
+      font-family: inherit;
+      font-size: 14px;
+      padding: 12px 15px;
+      border-radius: 12px;
+      border: 1px solid #2a3a55;
+      background: #141824;
+      color: #e2e8f0;
+    }
+
+    textarea::placeholder { color: #3d5a7a; }
+    textarea:focus { outline: none; border-color: #3a5a85; }
+
+    .send-btn {
+      width: 46px; height: 46px;
+      border-radius: 12px;
+      background: #1D9E75;
+      border: none;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: opacity 0.15s;
+    }
+    .send-btn:hover    { opacity: 0.85; }
+    .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .send-btn svg { width: 20px; height: 20px; fill: white; }
+
+    /* ─── FOOTER ───────────────────────────────────── */
+    .footer {
+      font-size: 11px;
+      color: #2a3a55;
+      margin-top: 12px;
+      text-align: center;
+    }
+
+    /* ─── EMPTY STATE ──────────────────────────────── */
+    .empty-state {
+      flex: 1;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 10px; padding: 2rem; text-align: center;
+    }
+    .empty-icon { font-size: 32px; }
+    .empty-state p { font-size: 13px; color: #3d5a7a; }
+
+  </style>
+</head>
+<body>
+
+  <!-- ── HEADER ─────────────────────────────── -->
+  <div class="header">
+    <div class="badge">
+      <div class="pulse"></div>
+      Capital Markets · Powered by Claude AI
+    </div>
+    <h1>Trade Lifecycle Intelligence Assistant</h1>
+    <p>Ask anything about equities trading — trade flow, MiFID II, FTT, settlement, pre-trade controls, or product design.</p>
+    <p class="built-by">Built by <span>Kinnari</span> · BA/PM · Capital Markets</p>
+  </div>
+
+  <!-- ── QUICK-START CHIPS ───────────────────── -->
+  <div class="chips">
+    <div class="chip" onclick="sendChip('Walk me through a full agency equity trade lifecycle from order capture to settlement')">Full trade lifecycle</div>
+    <div class="chip" onclick="sendChip('What pre-trade limit checks happen before an order hits the market?')">Pre-trade checks</div>
+    <div class="chip" onclick="sendChip('Explain MiFID II best execution obligations and how venues capture SI data')">MiFID II best execution</div>
+    <div class="chip" onclick="sendChip('What is FTT and which equity trades are in scope for France, Italy and Spain?')">FTT obligations</div>
+    <div class="chip" onclick="sendChip('How do settlement fails and breaks get resolved in post-trade operations?')">Settlement breaks</div>
+    <div class="chip" onclick="sendChip('How would you write a PRD for a trader permission management feature in an OMS?')">PRD: permissions feature</div>
+  </div>
+
+  <!-- ── CHAT WINDOW ─────────────────────────── -->
+  <div class="chat-area" id="chat">
+    <div class="empty-state" id="empty">
+      <div class="empty-icon">📊</div>
+      <p>Choose a topic above or type your own question below</p>
+    </div>
+  </div>
+
+  <!-- ── INPUT ROW ───────────────────────────── -->
+  <div class="input-row">
+    <textarea
+      id="input"
+      placeholder="Ask about trade flow, regulation, product design..."
+      rows="1"
+      onkeydown="if(event.key==='Enter' && !event.shiftKey){ event.preventDefault(); sendMessage(); }"
+      oninput="this.style.height='auto'; this.style.height=this.scrollHeight+'px'">
+    </textarea>
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+      <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+    </button>
+  </div>
+
+  <p class="footer">For demonstration and educational purposes only · Not financial advice</p>
+
+  <!-- ── JAVASCRIPT ──────────────────────────── -->
+  <script>
+
+    // ── 1. YOUR API KEY ──────────────────────────────────────────────────
+    //    Replace the text below with your actual Anthropic API key.
+    //    Keep the quote marks. Example: const API_KEY = "sk-ant-abc123...";
+    const API_KEY = null; // Key is stored securely in Netlify
+
+
+    // ── 2. THE SYSTEM PROMPT ─────────────────────────────────────────────
+    //    This tells Claude WHO it is and HOW to behave.
+    //    You can edit this to add more of your own domain knowledge.
+    const SYSTEM_PROMPT = `
+      You are a senior capital markets expert and product manager with deep expertise
+      in equities trading — specifically high-touch agency trading, electronic trading
+      workflows, and front-office technology platforms at tier-1 investment banks.
+
+      You have hands-on experience with:
+      - Full equity trade lifecycle: order capture, pre-trade risk checks, order routing,
+        exchange connectivity, post-trade allocation, clearing (LCH/Eurex), settlement (CSD, T+1/T+2)
+      - Regulatory frameworks: MiFID II (best execution, SI regime, transaction reporting),
+        FTT (France, Italy, Spain), EMIR (trade reporting, margin requirements)
+      - Front-office systems: OMS/EMS (Fidessa, Bloomberg EMSX), internal platforms
+      - Product management: writing PRDs, acceptance criteria, backlog prioritization,
+        stakeholder management for trading platforms
+      - User entitlements and permission systems for trading applications
+
+      When answering:
+      - Be precise and use correct financial and technical terminology
+      - For trade flows, use numbered steps to show the sequence clearly
+      - For regulatory topics, flag practical implementation implications
+      - For PM questions, frame answers with product thinking (user needs, tradeoffs, metrics)
+      - Keep answers structured but concise
+      - Use **bold** for key terms on first use
+      - Start every response with a tag on its own line — one of:
+        [TRADE FLOW], [REGULATORY], [RISK & CONTROLS], or [PRODUCT DESIGN]
+    `;
+
+
+    // ── 3. CONVERSATION HISTORY ──────────────────────────────────────────
+    //    We store every message so Claude remembers the full conversation.
+    let messages = [];
+    let isLoading = false;
+
+
+    // ── 4. SEND A CHIP (quick-start button) ──────────────────────────────
+    function sendChip(text) {
+      document.getElementById("input").value = text;
+      sendMessage();
+    }
+
+
+    // ── 5. MAIN SEND FUNCTION ─────────────────────────────────────────────
+    async function sendMessage() {
+
+      // Don't send if already waiting for a reply
+      if (isLoading) return;
+
+      const inputEl  = document.getElementById("input");
+      const sendBtn  = document.getElementById("sendBtn");
+      const userText = inputEl.value.trim();
+
+      // Don't send empty messages
+      if (!userText) return;
+
+      // Remove the empty state placeholder
+      const empty = document.getElementById("empty");
+      if (empty) empty.remove();
+
+      // Clear the input box
+      inputEl.value = "";
+      inputEl.style.height = "auto";
+
+      // Show the user's message in the chat
+      appendMessage("user", userText);
+
+      // Add to conversation history
+      messages.push({ role: "user", content: userText });
+
+      // Show the typing animation while waiting
+      const typingEl = appendTyping();
+      isLoading = true;
+      sendBtn.disabled = true;
+
+      // ── 6. CALL THE ANTHROPIC API ──────────────────────────────────────
+      try {
+        const response = await fetch("/.netlify/functions/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",  // the AI model we're using
+            max_tokens: 1000,                    // max length of the reply
+            system: SYSTEM_PROMPT,               // the instructions for Claude
+            messages: messages                   // the full conversation so far
+          })
+        });
+
+        const data  = await response.json();
+
+        // Extract the text from Claude's response
+        const reply = data.content?.map(block => block.text || "").join("") || "Sorry, I didn't get a response.";
+
+        // Remove typing animation
+        typingEl.remove();
+
+        // Show Claude's reply
+        appendMessage("ai", reply);
+
+        // Add Claude's reply to conversation history
+        messages.push({ role: "assistant", content: reply });
+
+      } catch (error) {
+        typingEl.remove();
+        appendMessage("ai", "⚠️ Connection error. Check your API key and try again.");
+        console.error("API error:", error);
+      }
+
+      isLoading = false;
+      sendBtn.disabled = false;
+    }
+
+
+    // ── 7. ADD A MESSAGE BUBBLE TO THE CHAT ──────────────────────────────
+    function appendMessage(role, text) {
+      const chat = document.getElementById("chat");
+
+      // Create the message row
+      const msgDiv    = document.createElement("div");
+      msgDiv.className = `msg ${role}`;
+
+      // Create the avatar circle
+      const avatar    = document.createElement("div");
+      avatar.className = `avatar ${role}`;
+      avatar.textContent = role === "ai" ? "AI" : "You";
+
+      // Create the text bubble
+      const bubble    = document.createElement("div");
+      bubble.className = "bubble";
+
+      if (role === "ai") {
+        // Format the AI response with colours and tags
+        bubble.innerHTML = formatAIText(text);
+      } else {
+        // User messages are plain text
+        bubble.textContent = text;
+      }
+
+      msgDiv.appendChild(avatar);
+      msgDiv.appendChild(bubble);
+      chat.appendChild(msgDiv);
+
+      // Scroll to the bottom
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+
+    // ── 8. FORMAT AI RESPONSES ────────────────────────────────────────────
+    //    Converts plain text from Claude into nicely styled HTML
+    function formatAIText(text) {
+
+      // Replace category tags with coloured badges
+      text = text.replace(/\[TRADE FLOW\]/g,     '<span class="tag flow">Trade Flow</span>');
+      text = text.replace(/\[REGULATORY\]/g,      '<span class="tag reg">Regulatory</span>');
+      text = text.replace(/\[RISK & CONTROLS\]/g, '<span class="tag risk">Risk & Controls</span>');
+      text = text.replace(/\[PRODUCT DESIGN\]/g,  '<span class="tag pm">Product Design</span>');
+
+      // Bold text wrapped in **asterisks**
+      text = text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+
+      // Numbered list items → HTML list items
+      text = text.replace(/^\d+\.\s(.+)$/gm, "<li>$1</li>");
+      text = text.replace(/(<li>[\s\S]*?<\/li>)+/g, match => `<ul>${match}</ul>`);
+
+      // Double line breaks → paragraph breaks
+      text = text.replace(/\n\n/g, '</p><p style="margin-top:8px">');
+      text = text.replace(/\n/g, "<br>");
+
+      return `<p>${text}</p>`;
+    }
+
+
+    // ── 9. TYPING ANIMATION ───────────────────────────────────────────────
+    function appendTyping() {
+      const chat = document.getElementById("chat");
+
+      const msgDiv    = document.createElement("div");
+      msgDiv.className = "msg ai";
+
+      const avatar    = document.createElement("div");
+      avatar.className = "avatar ai";
+      avatar.textContent = "AI";
+
+      const bubble    = document.createElement("div");
+      bubble.className = "bubble";
+      bubble.innerHTML = '<div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+
+      msgDiv.appendChild(avatar);
+      msgDiv.appendChild(bubble);
+      chat.appendChild(msgDiv);
+      chat.scrollTop = chat.scrollHeight;
+
+      return msgDiv;  // we return this so we can remove it later
+    }
+
+  </script>
+</body>
+</html>
